@@ -1,21 +1,16 @@
 const SUPABASE_URL = 'https://eggqozsnaybpvlcsohyr.supabase.co';
 const SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || '';
-
 let supabaseClient = null;
 
 function getClient() {
   if (!supabaseClient) {
-    if (!window.supabase) {
-      throw new Error('Supabase library belum dimuat.');
-    }
+    if (!window.supabase) throw new Error('Supabase library belum dimuat.');
     supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
   }
   return supabaseClient;
 }
 
-function qs(selector) {
-  return document.querySelector(selector);
-}
+function qs(selector) { return document.querySelector(selector); }
 
 function slugify(value) {
   return String(value || '')
@@ -26,16 +21,15 @@ function slugify(value) {
 }
 
 function rupiah(value) {
-  return new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
-    maximumFractionDigits: 0
-  }).format(Number(value || 0));
+  return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(Number(value || 0));
+}
+
+function isVerified(store) {
+  return store?.badge_type === 'verified' || store?.verification_status === 'verified';
 }
 
 async function getSessionUser() {
-  const client = getClient();
-  const { data } = await client.auth.getUser();
+  const { data } = await getClient().auth.getUser();
   return data.user;
 }
 
@@ -43,6 +37,8 @@ async function registerSeller(event) {
   event.preventDefault();
   const client = getClient();
   const form = event.currentTarget;
+  const submitBtn = form.querySelector('button[type="submit"]');
+
   const email = form.email.value.trim();
   const password = form.password.value;
   const fullName = form.full_name.value.trim();
@@ -50,6 +46,8 @@ async function registerSeller(event) {
   const username = slugify(form.username.value || storeName);
   const whatsapp = form.whatsapp.value.trim();
   const description = form.description.value.trim();
+
+  if (submitBtn) submitBtn.disabled = true;
 
   const { data: signUpData, error: signUpError } = await client.auth.signUp({
     email,
@@ -59,6 +57,7 @@ async function registerSeller(event) {
 
   if (signUpError) {
     alert(signUpError.message);
+    if (submitBtn) submitBtn.disabled = false;
     return;
   }
 
@@ -69,6 +68,14 @@ async function registerSeller(event) {
     return;
   }
 
+  await client.from('profiles').upsert({
+    id: userId,
+    username: email,
+    full_name: fullName,
+    phone: whatsapp,
+    role: 'seller'
+  });
+
   const { error: storeError } = await client.from('stores').insert({
     owner_id: userId,
     name: storeName,
@@ -76,12 +83,12 @@ async function registerSeller(event) {
     whatsapp,
     description,
     badge_type: 'unverified',
-    is_verified: false,
     status: 'active'
   });
 
   if (storeError) {
     alert(storeError.message);
+    if (submitBtn) submitBtn.disabled = false;
     return;
   }
 
@@ -91,12 +98,11 @@ async function registerSeller(event) {
 
 async function loginSeller(event) {
   event.preventDefault();
-  const client = getClient();
   const form = event.currentTarget;
-  const email = form.email.value.trim();
-  const password = form.password.value;
-
-  const { error } = await client.auth.signInWithPassword({ email, password });
+  const { error } = await getClient().auth.signInWithPassword({
+    email: form.email.value.trim(),
+    password: form.password.value
+  });
   if (error) {
     alert(error.message);
     return;
@@ -128,11 +134,16 @@ async function loadDashboard() {
     return;
   }
 
-  const { data: products } = await client
+  const { data: products, error: productsError } = await client
     .from('products')
     .select('*')
     .eq('store_id', store.id)
     .order('created_at', { ascending: false });
+
+  if (productsError) {
+    qs('#sellerContent').innerHTML = `<div class="card">Gagal memuat produk: ${productsError.message}</div>`;
+    return;
+  }
 
   const totalSold = (products || []).reduce((sum, item) => sum + Number(item.sold || 0), 0);
   const avgRating = products && products.length
@@ -142,20 +153,18 @@ async function loadDashboard() {
   qs('#sellerContent').innerHTML = `
     <section class="seller-hero">
       <div>
-        <span class="seller-status">${store.is_verified ? 'Verified Store' : 'Belum Verified'}</span>
+        <span class="seller-status">${isVerified(store) ? 'Verified Store' : 'Belum Verified'}</span>
         <h1>${store.name}</h1>
         <p>${store.description || 'Belum ada deskripsi toko.'}</p>
       </div>
       <button onclick="logoutSeller()">Logout</button>
     </section>
-
     <section class="stats">
       <div class="card">Produk<br><strong>${products?.length || 0}</strong></div>
       <div class="card">Terjual<br><strong>${totalSold}</strong></div>
       <div class="card">Rating<br><strong>${avgRating}</strong></div>
-      <div class="card">Status<br><strong>${store.is_verified ? 'Verified' : 'Pending'}</strong></div>
+      <div class="card">Status<br><strong>${isVerified(store) ? 'Verified' : 'Pending'}</strong></div>
     </section>
-
     <section class="panel">
       <div class="panel-head">
         <h2>Tambah Produk</h2>
@@ -171,7 +180,6 @@ async function loadDashboard() {
         <button type="submit">Tambah Produk</button>
       </form>
     </section>
-
     <section class="panel">
       <h2>Produk Saya</h2>
       <div class="seller-products">
@@ -194,10 +202,8 @@ async function loadDashboard() {
 
 async function addProduct(event, storeId) {
   event.preventDefault();
-  const client = getClient();
   const form = event.currentTarget;
-
-  const { error } = await client.from('products').insert({
+  const { error } = await getClient().from('products').insert({
     store_id: storeId,
     name: form.name.value.trim(),
     category: form.category.value.trim() || 'lainnya',
@@ -209,12 +215,10 @@ async function addProduct(event, storeId) {
     sold: 0,
     status: 'active'
   });
-
   if (error) {
     alert(error.message);
     return;
   }
-
   alert('Produk berhasil ditambahkan.');
   loadDashboard();
 }
