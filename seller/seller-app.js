@@ -33,7 +33,6 @@ async function registerSeller(event) {
   const whatsapp = form.whatsapp.value.trim();
   const description = form.description.value.trim();
   if (submitBtn) submitBtn.disabled = true;
-
   const { data: signUpData, error: signUpError } = await client.auth.signUp({ email, password, options: { data: { full_name: fullName } } });
   if (signUpError) { alert(signUpError.message); if (submitBtn) submitBtn.disabled = false; return; }
   const userId = signUpData.user?.id;
@@ -84,20 +83,10 @@ async function createStoreForCurrentUser(event, user) {
   await getClient().from('profiles').upsert({ id: user.id, username: user.email, full_name: user.user_metadata?.full_name || user.email, phone: whatsapp, role: 'seller' });
   const { data, error } = await getClient().from('stores').insert({ owner_id: user.id, name: storeName, username, whatsapp, description, badge_type: 'unverified', status: 'active' }).select('*').single();
   if (error) { alert(error.message); if (button) button.disabled = false; return; }
-  if (!data) { alert('Toko berhasil dibuat, memuat ulang dashboard.'); }
-  await loadDashboard(true);
+  await renderDashboard(data, []);
 }
 
-async function loadDashboard(forceReload = false) {
-  const client = getClient();
-  const user = await getSessionUser();
-  if (!user) { location.href = 'seller-login.html'; return; }
-  if (forceReload) await new Promise(resolve => setTimeout(resolve, 700));
-  const { data: store, error: storeError } = await client.from('stores').select('*').eq('owner_id', user.id).order('created_at', { ascending: false }).limit(1).maybeSingle();
-  if (storeError) { qs('#sellerContent').innerHTML = `<div class="card">Gagal memuat toko: ${storeError.message}</div>`; return; }
-  if (!store) { renderCreateStoreForm(user); return; }
-  const { data: products, error: productsError } = await client.from('products').select('*').eq('store_id', store.id).order('created_at', { ascending: false });
-  if (productsError) { qs('#sellerContent').innerHTML = `<div class="card">Gagal memuat produk: ${productsError.message}</div>`; return; }
+async function renderDashboard(store, products) {
   const totalSold = (products || []).reduce((sum, item) => sum + Number(item.sold || 0), 0);
   const avgRating = products && products.length ? (products.reduce((sum, item) => sum + Number(item.rating || 0), 0) / products.length).toFixed(1) : '0.0';
   qs('#sellerContent').innerHTML = `
@@ -108,20 +97,33 @@ async function loadDashboard(forceReload = false) {
   qs('#productForm').addEventListener('submit', event => addProduct(event, store.id));
 }
 
+async function loadDashboard() {
+  const client = getClient();
+  const user = await getSessionUser();
+  if (!user) { location.href = 'seller-login.html'; return; }
+  const { data: stores, error: storeError } = await client.from('stores').select('*').eq('owner_id', user.id).order('created_at', { ascending: false }).limit(1);
+  if (storeError) { qs('#sellerContent').innerHTML = `<div class="card">Gagal memuat toko: ${storeError.message}</div>`; return; }
+  const store = stores && stores.length ? stores[0] : null;
+  if (!store) { renderCreateStoreForm(user); return; }
+  const { data: products, error: productsError } = await client.from('products').select('*').eq('store_id', store.id).order('created_at', { ascending: false });
+  if (productsError) { qs('#sellerContent').innerHTML = `<div class="card">Gagal memuat produk: ${productsError.message}</div>`; return; }
+  await renderDashboard(store, products || []);
+}
+
 async function addProduct(event, storeId) {
   event.preventDefault();
   const form = event.currentTarget;
   const { error } = await getClient().from('products').insert({ store_id: storeId, name: form.name.value.trim(), category: form.category.value.trim() || 'lainnya', description: form.description.value.trim(), price: Number(form.price.value || 0), old_price: Number(form.old_price.value || 0), image: form.image.value.trim(), rating: 5, sold: 0, status: 'active' });
   if (error) { alert(error.message); return; }
   alert('Produk berhasil ditambahkan.');
-  loadDashboard(true);
+  loadDashboard();
 }
 
 async function deleteProduct(id) {
   if (!confirm('Hapus produk ini?')) return;
   const { error } = await getClient().from('products').delete().eq('id', id);
   if (error) { alert(error.message); return; }
-  loadDashboard(true);
+  loadDashboard();
 }
 
 document.addEventListener('DOMContentLoaded', () => {
