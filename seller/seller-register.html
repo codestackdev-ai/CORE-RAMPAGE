@@ -5,25 +5,30 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Buka Toko - CORE RAMPAGE</title>
   <link rel="stylesheet" href="seller-style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>window.SUPABASE_ANON_KEY='REPLACE_WITH_YOUR_ANON_KEY';</script>
+  <script defer src="seller-app.js"></script>
 </head>
 <body>
   <main class="auth-shell">
     <section class="auth-card wide">
       <div class="auth-brand"><div class="seller-logo">CR</div><div><h1>Buka Toko</h1><p>Buat toko Anda dan mulai berjualan</p></div></div>
-      <form class="seller-form grid">
+      <form id="sellerRegisterForm" class="seller-form grid">
+        <label>Nama Lengkap</label>
+        <input name="full_name" required>
+        <label>Email</label>
+        <input name="email" type="email" required>
+        <label>Password</label>
+        <input name="password" type="password" required>
         <label>Nama Toko</label>
-        <input type="text" placeholder="Nama toko Anda">
-        <label>Username Toko (slug)</label>
-        <input type="text" placeholder="contoh: toko-anda">
+        <input name="store_name" required>
+        <label>Username Toko</label>
+        <input name="username">
         <label>Nomor WhatsApp</label>
-        <input type="text" placeholder="08xxxx">
+        <input name="whatsapp">
         <label>Deskripsi Toko</label>
-        <textarea placeholder="Deskripsikan toko Anda"></textarea>
-        <label>Upload Logo</label>
-        <input type="file">
-        <label>Upload Cover</label>
-        <input type="file">
-        <button type="button">Buat Toko</button>
+        <textarea name="description"></textarea>
+        <button type="submit">Buat Toko</button>
       </form>
       <a class="back-home" href="../index.html">← Kembali</a>
     </section>
