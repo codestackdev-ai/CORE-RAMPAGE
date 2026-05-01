@@ -1,0 +1,18 @@
+body{margin:0;font-family:Arial;background:#f4f6f8}
+.auth-shell{display:flex;align-items:center;justify-content:center;height:100vh}
+.auth-card{background:#fff;padding:30px;border-radius:16px;width:360px;box-shadow:0 10px 30px rgba(0,0,0,0.1)}
+.auth-card.wide{width:500px}
+.auth-brand{display:flex;gap:10px;align-items:center;margin-bottom:20px}
+.seller-logo{width:50px;height:50px;border-radius:12px;background:#2563eb;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:bold}
+.seller-form{display:flex;flex-direction:column;gap:10px}
+.seller-form.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.seller-form input,.seller-form textarea{padding:10px;border:1px solid #ccc;border-radius:8px}
+.seller-form button{padding:12px;background:#2563eb;color:#fff;border:none;border-radius:10px;font-weight:bold}
+.dashboard{display:flex}
+.sidebar{width:220px;background:#0f172a;color:#fff;padding:20px;height:100vh}
+.sidebar ul{list-style:none;padding:0}
+.sidebar li{margin:15px 0}
+.main{flex:1;padding:20px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.card{background:#fff;padding:20px;border-radius:12px;box-shadow:0 5px 15px rgba(0,0,0,0.1)}
+.actions button{margin-right:10px;padding:10px 15px;border:none;background:#2563eb;color:#fff;border-radius:8px}
