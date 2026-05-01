@@ -5,17 +5,20 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Seller Login - CORE RAMPAGE</title>
   <link rel="stylesheet" href="seller-style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>window.SUPABASE_ANON_KEY='REPLACE_WITH_YOUR_ANON_KEY';</script>
+  <script defer src="seller-app.js"></script>
 </head>
 <body>
   <main class="auth-shell">
     <section class="auth-card">
       <div class="auth-brand"><div class="seller-logo">CR</div><div><h1>Seller Center</h1><p>Masuk ke dashboard toko Anda</p></div></div>
-      <form class="seller-form">
-        <label>Email / Username</label>
-        <input type="text" placeholder="seller@email.com">
+      <form id="sellerLoginForm" class="seller-form">
+        <label>Email</label>
+        <input name="email" type="email" placeholder="seller@email.com" required>
         <label>Password</label>
-        <input type="password" placeholder="Masukkan password">
-        <button type="button">Masuk Seller</button>
+        <input name="password" type="password" placeholder="Masukkan password" required>
+        <button type="submit">Masuk Seller</button>
       </form>
       <p class="auth-link">Belum punya toko? <a href="seller-register.html">Buka Toko Sekarang</a></p>
       <a class="back-home" href="../index.html">← Kembali ke Marketplace</a>
