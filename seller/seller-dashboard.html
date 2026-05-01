@@ -4,32 +4,11 @@
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Dashboard Seller</title>
 <link rel="stylesheet" href="seller-style.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>window.SUPABASE_ANON_KEY='REPLACE_WITH_YOUR_ANON_KEY';</script>
+<script defer src="seller-app.js"></script>
 </head>
 <body>
-<div class="dashboard">
-<aside class="sidebar">
-<h2>Seller</h2>
-<ul>
-<li>Dashboard</li>
-<li>Produk</li>
-<li>Pesanan</li>
-<li>Verifikasi</li>
-<li>Pengaturan</li>
-</ul>
-</aside>
-<main class="main">
-<header><h1>Dashboard Toko</h1></header>
-<section class="stats">
-<div class="card">Produk<br><strong>12</strong></div>
-<div class="card">Terjual<br><strong>1280</strong></div>
-<div class="card">Rating<br><strong>4.9</strong></div>
-<div class="card">Follower<br><strong>2400</strong></div>
-</section>
-<section class="actions">
-<button>+ Tambah Produk</button>
-<button>Lihat Produk</button>
-</section>
-</main>
-</div>
+<div id="sellerContent"></div>
 </body>
 </html>
