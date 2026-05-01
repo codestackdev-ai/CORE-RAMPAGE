@@ -75,22 +75,25 @@ function renderCreateStoreForm(user) {
 async function createStoreForCurrentUser(event, user) {
   event.preventDefault();
   const form = event.currentTarget;
+  const button = form.querySelector('button[type="submit"]');
+  if (button) button.disabled = true;
   const storeName = form.store_name.value.trim();
   const username = slugify(form.username.value || storeName);
   const whatsapp = form.whatsapp.value.trim();
   const description = form.description.value.trim();
   await getClient().from('profiles').upsert({ id: user.id, username: user.email, full_name: user.user_metadata?.full_name || user.email, phone: whatsapp, role: 'seller' });
-  const { error } = await getClient().from('stores').insert({ owner_id: user.id, name: storeName, username, whatsapp, description, badge_type: 'unverified', status: 'active' });
-  if (error) { alert(error.message); return; }
-  alert('Toko berhasil dibuat.');
-  loadDashboard();
+  const { data, error } = await getClient().from('stores').insert({ owner_id: user.id, name: storeName, username, whatsapp, description, badge_type: 'unverified', status: 'active' }).select('*').single();
+  if (error) { alert(error.message); if (button) button.disabled = false; return; }
+  if (!data) { alert('Toko berhasil dibuat, memuat ulang dashboard.'); }
+  await loadDashboard(true);
 }
 
-async function loadDashboard() {
+async function loadDashboard(forceReload = false) {
   const client = getClient();
   const user = await getSessionUser();
   if (!user) { location.href = 'seller-login.html'; return; }
-  const { data: store, error: storeError } = await client.from('stores').select('*').eq('owner_id', user.id).maybeSingle();
+  if (forceReload) await new Promise(resolve => setTimeout(resolve, 700));
+  const { data: store, error: storeError } = await client.from('stores').select('*').eq('owner_id', user.id).order('created_at', { ascending: false }).limit(1).maybeSingle();
   if (storeError) { qs('#sellerContent').innerHTML = `<div class="card">Gagal memuat toko: ${storeError.message}</div>`; return; }
   if (!store) { renderCreateStoreForm(user); return; }
   const { data: products, error: productsError } = await client.from('products').select('*').eq('store_id', store.id).order('created_at', { ascending: false });
@@ -111,14 +114,14 @@ async function addProduct(event, storeId) {
   const { error } = await getClient().from('products').insert({ store_id: storeId, name: form.name.value.trim(), category: form.category.value.trim() || 'lainnya', description: form.description.value.trim(), price: Number(form.price.value || 0), old_price: Number(form.old_price.value || 0), image: form.image.value.trim(), rating: 5, sold: 0, status: 'active' });
   if (error) { alert(error.message); return; }
   alert('Produk berhasil ditambahkan.');
-  loadDashboard();
+  loadDashboard(true);
 }
 
 async function deleteProduct(id) {
   if (!confirm('Hapus produk ini?')) return;
   const { error } = await getClient().from('products').delete().eq('id', id);
   if (error) { alert(error.message); return; }
-  loadDashboard();
+  loadDashboard(true);
 }
 
 document.addEventListener('DOMContentLoaded', () => {
